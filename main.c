@@ -1,35 +1,57 @@
 #include <stdio.h>
 
-#define LIGNES 6
-#define COLONNES 7
+#define LIGNES 7
+#define COLONNES 9
 
-// Fonction pour initialiser la grille à 0 (vide)
+// Couleurs ANSI (fonctionne dans le terminal Ubuntu)
+#define RESET   "\x1b[0m"
+#define ROUGE   "\x1b[31m"
+#define JAUNE   "\x1b[33m"
+
+// Initialiser la grille à 0
 void initialiserGrille(int grille[LIGNES][COLONNES]) {
-    for (int i = 0; i < LIGNES; i++) {
-        for (int j = 0; j < COLONNES; j++) {
+    for (int i = 0; i < LIGNES; i++)
+        for (int j = 0; j < COLONNES; j++)
             grille[i][j] = 0;
-        }
-    }
 }
 
-// Fonction pour afficher la grille
+// Afficher la grille "agrandie"
 void afficherGrille(int grille[LIGNES][COLONNES]) {
     printf("\n");
+
     for (int i = 0; i < LIGNES; i++) {
+        // Ligne du haut
+        for (int j = 0; j < COLONNES; j++)
+            printf("+----------");
+        printf("+\n");
+
+        // Ligne du milieu (contenu des cases)
         for (int j = 0; j < COLONNES; j++) {
-            if (grille[i][j] == 0) printf("| . ");
-            else if (grille[i][j] == 1) printf("| X ");
-            else printf("| O ");
+            if (grille[i][j] == 0)
+                printf("|          ");
+            else if (grille[i][j] == 1)
+                printf("|  %sX%s    ", ROUGE, RESET);
+            else
+                printf("|  %sO%s    ", JAUNE, RESET);
         }
         printf("|\n");
     }
-    printf("  1   2   3   4   5   6   7\n");
-    printf("\n");
+
+    // Ligne du bas
+    for (int j = 0; j < COLONNES; j++)
+        printf("+----------");
+    printf("+\n");
+
+    // Numéros de colonnes
+    for (int j = 1; j <= COLONNES; j++)
+        printf("    %d      ", j);
+    printf("\n\n");
 }
 
-// Fonction pour jouer un coup (retourne 1 si OK, 0 si colonne pleine)
+// Jouer un coup
 int jouerCoup(int grille[LIGNES][COLONNES], int joueur, int colonne) {
-    if (colonne < 0 || colonne >= COLONNES) return 0;
+    if (colonne < 0 || colonne >= COLONNES)
+        return 0;
 
     for (int i = LIGNES - 1; i >= 0; i--) {
         if (grille[i][colonne] == 0) {
@@ -40,88 +62,84 @@ int jouerCoup(int grille[LIGNES][COLONNES], int joueur, int colonne) {
     return 0; // colonne pleine
 }
 
-// Vérifie si un joueur a gagné
+// Vérifier la victoire (4 alignés)
 int verifierVictoire(int grille[LIGNES][COLONNES], int joueur) {
-    // Vérification horizontale
-    for (int i = 0; i < LIGNES; i++) {
-        for (int j = 0; j < COLONNES - 3; j++) {
+    // Horizontale
+    for (int i = 0; i < LIGNES; i++)
+        for (int j = 0; j < COLONNES - 3; j++)
             if (grille[i][j] == joueur && grille[i][j+1] == joueur &&
                 grille[i][j+2] == joueur && grille[i][j+3] == joueur)
                 return 1;
-        }
-    }
 
-    // Vérification verticale
-    for (int i = 0; i < LIGNES - 3; i++) {
-        for (int j = 0; j < COLONNES; j++) {
+    // Verticale
+    for (int i = 0; i < LIGNES - 3; i++)
+        for (int j = 0; j < COLONNES; j++)
             if (grille[i][j] == joueur && grille[i+1][j] == joueur &&
                 grille[i+2][j] == joueur && grille[i+3][j] == joueur)
                 return 1;
-        }
-    }
 
-    // Vérification diagonale (bas droite)
-    for (int i = 0; i < LIGNES - 3; i++) {
-        for (int j = 0; j < COLONNES - 3; j++) {
+    // Diagonale ↘
+    for (int i = 0; i < LIGNES - 3; i++)
+        for (int j = 0; j < COLONNES - 3; j++)
             if (grille[i][j] == joueur && grille[i+1][j+1] == joueur &&
                 grille[i+2][j+2] == joueur && grille[i+3][j+3] == joueur)
                 return 1;
-        }
-    }
 
-    // Vérification diagonale (haut droite)
-    for (int i = 3; i < LIGNES; i++) {
-        for (int j = 0; j < COLONNES - 3; j++) {
+    // Diagonale ↗
+    for (int i = 3; i < LIGNES; i++)
+        for (int j = 0; j < COLONNES - 3; j++)
             if (grille[i][j] == joueur && grille[i-1][j+1] == joueur &&
                 grille[i-2][j+2] == joueur && grille[i-3][j+3] == joueur)
                 return 1;
-        }
-    }
 
-    return 0; // pas de victoire
+    return 0;
 }
 
-// Vérifie si la grille est pleine (match nul)
+// Vérifier si la grille est pleine
 int estPleine(int grille[LIGNES][COLONNES]) {
-    for (int j = 0; j < COLONNES; j++) {
-        if (grille[0][j] == 0) return 0;
-    }
+    for (int j = 0; j < COLONNES; j++)
+        if (grille[0][j] == 0)
+            return 0;
     return 1;
 }
 
 int main() {
     int grille[LIGNES][COLONNES];
     int joueur = 1;
-    int colonne;
-    int victoire = 0;
+    int colonne, victoire = 0;
 
     initialiserGrille(grille);
 
-    printf("=== Puissance 4 ===\n");
+    printf("=== PUISSANCE 4 CLASSIQUE ===\n");
     afficherGrille(grille);
 
     while (!victoire && !estPleine(grille)) {
-        printf("Joueur %d, choisissez une colonne (1-7) : ", joueur);
+        printf("Joueur %d (%s%s%s), choisissez une colonne (1-%d) : ",
+               joueur,
+               (joueur == 1 ? ROUGE : JAUNE),
+               (joueur == 1 ? "X" : "O"),
+               RESET,
+               COLONNES);
+
         scanf("%d", &colonne);
-        colonne--; // pour correspondre à l'indice du tableau (0 à 6)
+        colonne--;
 
         if (jouerCoup(grille, joueur, colonne)) {
             afficherGrille(grille);
 
             if (verifierVictoire(grille, joueur)) {
-                printf("🎉 Joueur %d gagne !\n", joueur);
+                printf("🎉 Bravo Joueur %d ! Vous avez gagné !\n", joueur);
                 victoire = 1;
             } else {
-                joueur = (joueur == 1) ? 2 : 1; // changer de joueur
+                joueur = (joueur == 1) ? 2 : 1; // changement de joueur
             }
         } else {
-            printf("Colonne invalide ou pleine, réessayez.\n");
+            printf("⚠️ Colonne invalide ou pleine, réessayez.\n");
         }
     }
 
-    if (!victoire) {
+    if (!victoire)
         printf("Match nul ! La grille est pleine.\n");
-    }
 
     return 0;
 }
