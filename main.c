@@ -30,9 +30,9 @@ void afficherGrille(int grille[LIGNES][COLONNES]) {
             if (grille[i][j] == 0)
                 printf("|          ");
             else if (grille[i][j] == 1)
-                printf("|  %sX%s    ", ROUGE, RESET);
+                printf("|    %sX%s     ", ROUGE, RESET);
             else
-                printf("|  %sO%s    ", JAUNE, RESET);
+                printf("|    %sO%s     ", JAUNE, RESET);
         }
         printf("|\n");
     }
