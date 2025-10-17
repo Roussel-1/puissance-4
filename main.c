@@ -1,5 +1,4 @@
 #include <stdio.h>
-
 #define LIGNES 7
 #define COLONNES 9
 
@@ -8,11 +7,11 @@
 #define ROUGE   "\x1b[31m"
 #define JAUNE   "\x1b[33m"
 
+
 // Initialiser la grille à 0
 void initialiserGrille(int grille[LIGNES][COLONNES]) {
     for (int i = 0; i < LIGNES; i++)
-        for (int j = 0; j < COLONNES; j++)
-            grille[i][j] = 0;
+        for (int j = 0; j < COLONNES; j++)            grille[i][j] = 0;
 }
 
 // Afficher la grille "agrandie"
@@ -20,34 +19,43 @@ void afficherGrille(int grille[LIGNES][COLONNES]) {
     printf("\n");
 
     for (int i = 0; i < LIGNES; i++) {
-        // Ligne du haut
+        // ligne du haut
         for (int j = 0; j < COLONNES; j++)
             printf("+----------");
         printf("+\n");
 
-        // Ligne du milieu (contenu des cases)
+        // 🔹 Première sous-ligne vide (haut de la case)
+        for (int j = 0; j < COLONNES; j++)
+            printf("|          ");
+        printf("|\n");
+
+        // 🔹 Deuxième sous-ligne avec le pion
         for (int j = 0; j < COLONNES; j++) {
             if (grille[i][j] == 0)
                 printf("|          ");
             else if (grille[i][j] == 1)
-                printf("|    %sX%s     ", ROUGE, RESET);
+                printf("|     %s⬤%s    ", ROUGE, RESET);
             else
-                printf("|    %sO%s     ", JAUNE, RESET);
+                printf("|     %s⬤%s    ", JAUNE, RESET);
         }
+        printf("|\n");
+
+        // 🔹 Troisième sous-ligne vide (bas de la case)
+        for (int j = 0; j < COLONNES; j++)
+            printf("|          ");
         printf("|\n");
     }
 
-    // Ligne du bas
+    // ligne du bas finale
     for (int j = 0; j < COLONNES; j++)
         printf("+----------");
     printf("+\n");
 
-    // Numéros de colonnes
+    // numéros de colonnes
     for (int j = 1; j <= COLONNES; j++)
-        printf("    %d      ", j);
+        printf("     %d     ", j);
     printf("\n\n");
 }
-
 // Jouer un coup
 int jouerCoup(int grille[LIGNES][COLONNES], int joueur, int colonne) {
     if (colonne < 0 || colonne >= COLONNES)
