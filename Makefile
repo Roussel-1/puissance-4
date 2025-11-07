@@ -1,15 +1,20 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 $(shell sdl2-config --cflags)
-LDFLAGS = $(shell sdl2-config --libs)
-TARGET = puissance4
-SRC = main2.c
+CFLAGS = -Wall -Wextra -std=c11
+LIBS = -lSDL2
 
-# --- Règle par défaut (ce que "make" fera) ---
-all: $(TARGET)
+# NOM DU FICHIER SOURCE (change seulement cette ligne si tu changes le nom)
+SRC = main3.c
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC) $(LDFLAGS)
+# NOM DE L'EXÉCUTABLE
+OUT = puissance4
 
-# --- Nettoyer les fichiers compilés ---
+all: $(OUT)
+
+$(OUT): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(OUT) $(LIBS)
+
+run: $(OUT)
+	./$(OUT)
+
 clean:
-	rm -f $(TARGET)
+	rm -f $(OUT)
