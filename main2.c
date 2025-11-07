@@ -1,168 +1,193 @@
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-#define LIGNES 6
-#define COLONNES 7
 #define CELL_SIZE 100
+#define COLONNES 7
+#define LIGNES 6
 
 typedef struct {
-    int x1, y1;     // début de la ligne de victoire
-    int x2, y2;     // fin de la ligne
-    int gagnant;    // joueur gagnant
-    int victoire;   // 1 = victoire trouvée
-} VictoireInfo;
+    bool victoire;
+    int joueur;
+} Victoire;
 
-// --- Dessine un cercle rempli ---
-void DrawCircle(SDL_Renderer *renderer, int cx, int cy, int radius) {
-    for (int y = -radius; y <= radius; y++) {
-        for (int x = -radius; x <= radius; x++) {
-            if (x*x + y*y <= radius*radius)
-                SDL_RenderDrawPoint(renderer, cx + x, cy + y);
-        }
-    }
-}
+// === FONCTIONS DE BASE ===
 
-// --- Vérifie victoire et renvoie les coordonnées gagnantes ---
-VictoireInfo verifierVictoire(int grille[LIGNES][COLONNES], int joueur) {
-    VictoireInfo v = {0,0,0,0,0,0};
-
-    // horizontale
+void reinitialiserGrille(int grille[LIGNES][COLONNES]) {
     for (int i = 0; i < LIGNES; i++)
-        for (int j = 0; j < COLONNES - 3; j++)
-            if (grille[i][j] == joueur && grille[i][j+1] == joueur &&
-                grille[i][j+2] == joueur && grille[i][j+3] == joueur) {
-                v.x1 = j; v.y1 = i; v.x2 = j+3; v.y2 = i;
-                v.gagnant = joueur; v.victoire = 1;
-                return v;
-            }
-
-    // verticale
-    for (int i = 0; i < LIGNES - 3; i++)
         for (int j = 0; j < COLONNES; j++)
-            if (grille[i][j] == joueur && grille[i+1][j] == joueur &&
-                grille[i+2][j] == joueur && grille[i+3][j] == joueur) {
-                v.x1 = j; v.y1 = i; v.x2 = j; v.y2 = i+3;
-                v.gagnant = joueur; v.victoire = 1;
-                return v;
-            }
-
-    // diagonale descendante ↘
-    for (int i = 0; i < LIGNES - 3; i++)
-        for (int j = 0; j < COLONNES - 3; j++)
-            if (grille[i][j] == joueur && grille[i+1][j+1] == joueur &&
-                grille[i+2][j+2] == joueur && grille[i+3][j+3] == joueur) {
-                v.x1 = j; v.y1 = i; v.x2 = j+3; v.y2 = i+3;
-                v.gagnant = joueur; v.victoire = 1;
-                return v;
-            }
-
-    // diagonale montante ↗
-    for (int i = 3; i < LIGNES; i++)
-        for (int j = 0; j < COLONNES - 3; j++)
-            if (grille[i][j] == joueur && grille[i-1][j+1] == joueur &&
-                grille[i-2][j+2] == joueur && grille[i-3][j+3] == joueur) {
-                v.x1 = j; v.y1 = i; v.x2 = j+3; v.y2 = i-3;
-                v.gagnant = joueur; v.victoire = 1;
-                return v;
-            }
-
-    return v;
+            grille[i][j] = 0;
 }
 
-// --- Joue un coup dans une colonne ---
-int jouerCoup(int grille[LIGNES][COLONNES], int joueur, int colonne) {
-    if (colonne < 0 || colonne >= COLONNES) return 0;
-    for (int i = LIGNES - 1; i >= 0; i--) {
-        if (grille[i][colonne] == 0) {
-            grille[i][colonne] = joueur;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-// --- Affiche la grille SDL ---
-void afficherGrilleSDL(SDL_Renderer *renderer, int grille[LIGNES][COLONNES], VictoireInfo v) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // fond blanc
+void afficherGrilleSDL(SDL_Renderer *renderer, int grille[LIGNES][COLONNES], Victoire victoire) {
+    // Fond blanc
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
-    int margin = 10;
-
+    // Grille bleue + pions
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
     for (int i = 0; i < LIGNES; i++) {
         for (int j = 0; j < COLONNES; j++) {
-            SDL_Rect caseRect = { j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE };
-
-            // contour gris
-            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-            SDL_RenderDrawRect(renderer, &caseRect);
-
-            // pion
-            if (grille[i][j] != 0) {
-                if (grille[i][j] == 1)
-                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // rouge
-                else
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // jaune
-
-                int radius = (CELL_SIZE - 2 * margin) / 2;
-                int centerX = j * CELL_SIZE + CELL_SIZE / 2;
-                int centerY = i * CELL_SIZE + CELL_SIZE / 2;
-                DrawCircle(renderer, centerX, centerY, radius);
+            SDL_Rect cell = { j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE };
+            SDL_RenderDrawRect(renderer, &cell);
+            if (grille[i][j] == 1) {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_RenderFillRect(renderer, &cell);
+            } else if (grille[i][j] == 2) {
+                SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+                SDL_RenderFillRect(renderer, &cell);
             }
+            SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
         }
     }
-
-    // --- Si victoire, dessine une ligne verte ---
-    if (v.victoire) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        int x1 = v.x1 * CELL_SIZE + CELL_SIZE / 2;
-        int y1 = v.y1 * CELL_SIZE + CELL_SIZE / 2;
-        int x2 = v.x2 * CELL_SIZE + CELL_SIZE / 2;
-        int y2 = v.y2 * CELL_SIZE + CELL_SIZE / 2;
-    	int thickness = 10; // épaisseur de la ligne (en pixels)
-	for (int offset = -thickness/2; offset <= thickness/2; offset++) {
-    		SDL_RenderDrawLine(renderer, x1 - offset, y1 + offset, x2 - offset, y2 + offset);
-	}
-}
-
     SDL_RenderPresent(renderer);
 }
 
-// --- Programme principal ---
-int main() {
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window = SDL_CreateWindow("Puissance 4 SDL2",
-                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                          COLONNES * CELL_SIZE, LIGNES * CELL_SIZE, 0);
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+bool jouerCoup(int grille[LIGNES][COLONNES], int joueur, int colonne) {
+    if (colonne < 0 || colonne >= COLONNES) return false;
+    for (int i = LIGNES - 1; i >= 0; i--) {
+        if (grille[i][colonne] == 0) {
+            grille[i][colonne] = joueur;
+            return true;
+        }
+    }
+    return false;
+}
 
-    int grille[LIGNES][COLONNES] = {0};
-    int joueur = 1;
-    int enCours = 1;
-    VictoireInfo victoire = {0,0,0,0,0,0};
+// === À adapter avec ta logique de victoire ===
+Victoire verifierVictoire(int grille[LIGNES][COLONNES], int joueur) {
+    Victoire v = {false, joueur};
+    // (simplifié ici, à remplacer par ta logique réelle)
+    return v;
+}
 
-    afficherGrilleSDL(renderer, grille, victoire);
-
+// === MENU GRAPHIQUE DE CHOIX ===
+int afficherMenu(SDL_Renderer *renderer) {
     SDL_Event e;
-    while (enCours) {
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT)
-                enCours = 0;
+    int choix = 0;
+    bool enMenu = true;
 
-            // clic souris
-            if (!victoire.victoire && e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) {
-                int colonne = e.button.x / CELL_SIZE;
-                if (jouerCoup(grille, joueur, colonne)) {
-                    victoire = verifierVictoire(grille, joueur);
-                    afficherGrilleSDL(renderer, grille, victoire);
-                    if (victoire.victoire) {
-                        printf("🎉 Joueur %d a gagné !\n", joueur);
-                    } else {
-                        joueur = (joueur == 1) ? 2 : 1;
+    SDL_Rect boutons[3];
+    const int nbChoix[3] = {1, 3, 5};
+    int boutonW = 200, boutonH = 80;
+    int espacement = 50;
+    int startY = 150;
+
+    for (int i = 0; i < 3; i++) {
+        boutons[i].x = (COLONNES * CELL_SIZE - boutonW) / 2;
+        boutons[i].y = startY + i * (boutonH + espacement);
+        boutons[i].w = boutonW;
+        boutons[i].h = boutonH;
+    }
+
+    while (enMenu) {
+        SDL_SetRenderDrawColor(renderer, 240, 240, 240, 255);
+        SDL_RenderClear(renderer);
+
+        // Titre
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_Rect titreRect = { (COLONNES * CELL_SIZE) / 2 - 150, 50, 300, 50 };
+        SDL_RenderDrawRect(renderer, &titreRect);
+
+        // Dessiner boutons
+        for (int i = 0; i < 3; i++) {
+            SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);
+            SDL_RenderFillRect(renderer, &boutons[i]);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderDrawRect(renderer, &boutons[i]);
+        }
+        SDL_RenderPresent(renderer);
+
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                return 0;
+            }
+            if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) {
+                int x = e.button.x;
+                int y = e.button.y;
+                for (int i = 0; i < 3; i++) {
+                    if (x >= boutons[i].x && x <= boutons[i].x + boutons[i].w &&
+                        y >= boutons[i].y && y <= boutons[i].y + boutons[i].h) {
+                        choix = nbChoix[i];
+                        enMenu = false;
                     }
                 }
             }
         }
     }
+    return choix;
+}
+
+// === PROGRAMME PRINCIPAL ===
+int main() {
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Window *window = SDL_CreateWindow("Puissance 4 - Multi-Manches",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        COLONNES * CELL_SIZE, LIGNES * CELL_SIZE, 0);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    int grille[LIGNES][COLONNES] = {0};
+    bool enCours = true;
+    int joueur = 1;
+    Victoire victoire = {false, 0};
+
+    // === Menu de sélection du nombre de parties ===
+    int nbParties = afficherMenu(renderer);
+    if (nbParties == 0) {
+        SDL_Quit();
+        return 0;
+    }
+
+    printf("Nombre de parties sélectionné : %d\n", nbParties);
+
+    int scoreJ1 = 0, scoreJ2 = 0;
+    int mancheActuelle = 1;
+
+    while (mancheActuelle <= nbParties && enCours) {
+        reinitialiserGrille(grille);
+        victoire.victoire = false;
+        afficherGrilleSDL(renderer, grille, victoire);
+        printf("=== Début de la manche %d ===\n", mancheActuelle);
+
+        while (!victoire.victoire && enCours) {
+            SDL_Event e;
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    enCours = false;
+                    break;
+                }
+
+                if (!victoire.victoire && e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) {
+                    int colonne = e.button.x / CELL_SIZE;
+                    if (jouerCoup(grille, joueur, colonne)) {
+                        victoire = verifierVictoire(grille, joueur);
+                        afficherGrilleSDL(renderer, grille, victoire);
+                        if (victoire.victoire) {
+                            printf("🎉 Joueur %d gagne la manche %d !\n", joueur, mancheActuelle);
+                            if (joueur == 1) scoreJ1++; else scoreJ2++;
+
+                            int majorite = (nbParties / 2) + 1;
+                            if (scoreJ1 >= majorite || scoreJ2 >= majorite) {
+                                enCours = false;
+                            }
+                            mancheActuelle++;
+                            SDL_Delay(1000);
+                        } else {
+                            joueur = (joueur == 1) ? 2 : 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // === Fin du jeu ===
+    if (scoreJ1 > scoreJ2)
+        printf("\n🏆 Joueur 1 remporte le jeu (%d-%d)\n", scoreJ1, scoreJ2);
+    else if (scoreJ2 > scoreJ1)
+        printf("\n🏆 Joueur 2 remporte le jeu (%d-%d)\n", scoreJ2, scoreJ1);
+    else
+        printf("\n🤝 Match nul (%d-%d)\n", scoreJ1, scoreJ2);
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
